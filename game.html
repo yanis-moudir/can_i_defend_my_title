@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Title Run — Draft</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#0F1012;--panel:#16181C;--panel-2:#1C1F25;--line:#2A2E35;--bone:#ECE6D8;--muted:#878C95;
+    --red:#E23B3B;--blue:#3E7CB1;--gold:#E8B53A;--green:#5BBF7B;--maxw:1080px;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--ink);color:var(--bone);font-family:'Inter',sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased;padding:28px 20px 80px}
+  .wrap{max-width:var(--maxw);margin:0 auto}
+  .eyebrow{font-family:'Space Mono',monospace;font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
+  h1{font-family:'Oswald',sans-serif;font-weight:700;text-transform:uppercase;font-size:clamp(30px,6vw,52px);line-height:.95;margin:8px 0 14px}
+  h1 .vs{color:var(--red)}
+
+  .modes{display:flex;gap:8px;align-items:center;margin-bottom:18px;flex-wrap:wrap}
+  .mode-btn{background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:7px 16px;cursor:pointer;font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase}
+  .mode-btn.active{border-color:var(--gold);color:var(--gold);background:rgba(232,181,58,.07)}
+  .mode-note{font-size:12px;color:var(--muted)}
+
+  .layout{display:grid;grid-template-columns:330px 1fr;gap:22px;align-items:start}
+  @media (max-width:840px){.layout{grid-template-columns:1fr}}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+  .panel h2{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;display:flex;justify-content:space-between}
+
+  .slot{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;border:1px solid transparent;margin-bottom:6px}
+  .slot.active{border-color:var(--gold);background:rgba(232,181,58,.07)}
+  .slot.filled{background:var(--panel-2)}
+  .slot .idx{font-family:'Space Mono',monospace;font-size:12px;color:var(--muted);width:18px}
+  .slot .body{flex:1;min-width:0}
+  .slot .sname{font-size:13px;color:var(--muted)}
+  .slot.filled .sname{color:var(--bone)}
+  .slot .pick{font-family:'Oswald',sans-serif;font-weight:600;text-transform:uppercase;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .slot .pick .small{font-size:11px;color:var(--muted);font-family:'Space Mono',monospace;text-transform:none}
+  .slot .val{font-family:'Space Mono',monospace;font-weight:700;font-size:14px;color:var(--gold)}
+  .slot .val.hid{color:var(--muted)}
+
+  .counters{display:flex;gap:8px;margin-top:14px}
+  .counter{flex:1;background:var(--panel-2);border:1px solid var(--line);border-radius:9px;padding:10px;text-align:center}
+  .counter .n{font-family:'Oswald',sans-serif;font-weight:700;font-size:22px}
+  .counter .t{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-top:2px}
+
+  .now{font-family:'Space Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+  .now b{color:var(--gold)}
+  .reels{display:flex;gap:14px;margin-bottom:18px}
+  .reel{flex:1;background:var(--ink);border:1px solid var(--line);border-radius:11px;padding:18px 14px;text-align:center}
+  .reel .rl{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:9px}
+  .reel .rv{font-family:'Oswald',sans-serif;font-weight:700;text-transform:capitalize;font-size:clamp(18px,3.4vw,26px);min-height:1.1em}
+  .reel.era .rv{color:var(--blue)} .reel.division .rv{color:var(--red)}
+  .reel.spinning .rv{filter:blur(3px);opacity:.85}
+  .reel.landed{animation:thunk .3s ease}
+  @keyframes thunk{0%{transform:translateY(-5px)}60%{transform:translateY(2px)}100%{transform:none}}
+  @media (prefers-reduced-motion:reduce){.reel.spinning .rv{filter:none}.reel.landed{animation:none}}
+
+  .controls{margin-bottom:10px}
+  .btn{font-family:'Oswald',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:18px;border:none;border-radius:10px;padding:13px 30px;cursor:pointer;transition:transform .1s,filter .15s}
+  .btn.spin{background:var(--gold);color:var(--ink)}
+  .btn.spin:hover:not(:disabled){filter:brightness(1.08)} .btn.spin:active:not(:disabled){transform:translateY(2px)}
+  .btn:disabled{opacity:.4;cursor:not-allowed;transform:none;filter:none}
+  .btn:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+
+  .tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+  .tool{background:transparent;border:1px solid var(--line);color:var(--bone);border-radius:9px;padding:8px 13px;cursor:pointer;font-family:'Oswald',sans-serif;font-weight:600;text-transform:uppercase;font-size:13px;letter-spacing:.04em;display:flex;flex-direction:column;align-items:flex-start;line-height:1.2}
+  .tool small{font-family:'Space Mono',monospace;font-weight:400;text-transform:none;font-size:9px;color:var(--muted);letter-spacing:0;margin-top:2px}
+  .tool:hover:not(:disabled){border-color:var(--blue);color:var(--blue)}
+  .tool:disabled{opacity:.35;cursor:not-allowed}
+  .tool.used{opacity:.25;text-decoration:line-through}
+  .tool:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+
+  .pool-head{font-family:'Space Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:22px 0 12px;border-bottom:1px solid var(--line);padding-bottom:8px;display:flex;justify-content:space-between}
+  #pool{display:flex;flex-direction:column;gap:10px}
+  .fighter{width:100%;text-align:left;background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--blue);border-radius:11px;padding:14px 16px;cursor:pointer;font-family:inherit;color:inherit;transition:border-color .12s,background .12s}
+  .fighter:hover:not(.locked){border-color:var(--gold);background:var(--panel-2)}
+  .fighter.champ{border-left-color:var(--gold)}
+  .fighter.locked{opacity:.5;cursor:not-allowed}
+  .fighter:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+  .ftop{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+  .fname{font-family:'Oswald',sans-serif;font-weight:700;text-transform:uppercase;font-size:19px}
+  .belt{color:var(--ink);background:var(--gold);font-weight:700;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.1em;padding:2px 7px;border-radius:5px;text-transform:uppercase}
+  .lockmsg{font-family:'Space Mono',monospace;font-size:10px;color:var(--red);text-transform:uppercase;letter-spacing:.08em}
+  .frec{margin-left:auto;font-family:'Oswald',sans-serif;font-weight:600;font-size:16px}
+  .frec .l{color:var(--muted)}
+  .fbig{display:flex;align-items:baseline;gap:10px}
+  .fbig .v{font-family:'Space Mono',monospace;font-weight:700;font-size:26px;color:var(--gold)}
+  .fbig .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
+
+  .state{padding:30px 22px;text-align:center;border:1px dashed var(--line);border-radius:12px;color:var(--muted)}
+  .state.error{border-color:var(--red);border-style:solid;text-align:left}
+  .state.error h3{font-family:'Oswald',sans-serif;text-transform:uppercase;color:var(--red);font-size:18px;margin-bottom:10px}
+  .state.error code{background:var(--ink);border:1px solid var(--line);border-radius:5px;padding:2px 7px;font-family:'Space Mono',monospace;color:var(--gold)}
+  .reset{margin-top:14px;background:none;border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:9px 18px;cursor:pointer;font-family:inherit}
+  .reset:hover{color:var(--bone);border-color:var(--bone)}
+
+  .score{text-align:center;padding:26px 20px;border:1px solid var(--gold);border-radius:14px;background:rgba(232,181,58,.05)}
+  .score-belt{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold)}
+  .defnum{font-family:'Oswald',sans-serif;font-weight:700;font-size:84px;line-height:1;color:var(--gold);margin-top:4px}
+  .defnum span{font-size:28px;color:var(--muted);margin-left:4px}
+  .deflabel{font-family:'Space Mono',monospace;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+  .flavor{font-family:'Oswald',sans-serif;text-transform:uppercase;font-size:19px;margin:14px 0 4px}
+  .rating{font-family:'Space Mono',monospace;font-size:13px;color:var(--muted);margin-bottom:20px}
+  .rating b{color:var(--bone);font-size:16px}
+  .breakdown{text-align:left;display:flex;flex-direction:column;gap:7px;margin-bottom:18px}
+  .brow{display:grid;grid-template-columns:128px minmax(0,1fr) 52px 28px;gap:10px;align-items:center}
+  .blabel{color:var(--muted);font-size:10.5px;text-transform:uppercase;letter-spacing:.04em}
+  .brow.weak .blabel{color:var(--red)}
+  .bfighter{font-family:'Oswald',sans-serif;font-weight:600;text-transform:uppercase;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bfighter span{font-family:'Space Mono',monospace;color:var(--muted);font-size:11px;margin-left:6px;text-transform:none}
+  .bar{background:var(--ink);border:1px solid var(--line);border-radius:5px;height:9px;overflow:hidden}
+  .barfill{height:100%;background:var(--gold)}
+  .brow.weak .barfill{background:var(--red)}
+  .bnum{font-family:'Space Mono',monospace;font-weight:700;font-size:12px;text-align:right}
+  @media (max-width:560px){.brow{grid-template-columns:96px minmax(0,1fr) 40px 24px;gap:7px}.blabel{font-size:9.5px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">Build your roster · 8 specialists</div>
+  <h1>The <span class="vs">Draft</span></h1>
+  <div class="modes" id="modes" hidden>
+    <button class="mode-btn" data-mode="classic">Classic</button>
+    <button class="mode-btn" data-mode="ballknowledge">Ball Knowledge</button>
+    <span class="mode-note" id="modeNote"></span>
+  </div>
+
+  <div id="boot" class="state">Loading roster database…</div>
+
+  <div class="layout" id="game" hidden>
+    <div class="panel">
+      <h2><span>Your roster</span><span id="progress">0 / 8</span></h2>
+      <div id="slots"></div>
+      <div class="counters">
+        <div class="counter"><div class="n" id="champN">0/2</div><div class="t">Champions</div></div>
+        <div class="counter"><div class="n" id="rerollN">3</div><div class="t">Rerolls left</div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="now" id="now"></div>
+      <div class="reels">
+        <div class="reel era"><div class="rl">Era</div><div class="rv" id="rEra">—</div></div>
+        <div class="reel division"><div class="rl">Division</div><div class="rv" id="rDiv">—</div></div>
+      </div>
+      <div class="controls"><button class="btn spin" id="spin">Spin</button></div>
+      <div class="tools">
+        <button class="tool" id="tBoth">Reroll both<small>fresh era + division</small></button>
+        <button class="tool" id="tDiv">Reroll division<small>keep the era</small></button>
+        <button class="tool" id="tEra">Reroll era<small>keep the division</small></button>
+      </div>
+      <div id="pool-wrap"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SLOTS = [
+  {key:"strike_accuracy",          label:"Strikes_accuracy", better:"high", fmt:pct},
+  {key:"strikes_absorbed_per_min", label:"Strikes_defence", better:"low",  fmt:num},
+  {key:"td_defence",               label:"Takedown defence",     better:"high", fmt:pct},
+  {key:"td_accuracy",              label:"Takedown offence",    better:"high", fmt:pct},
+  {key:"knockdown_ratio",          label:"Power",      better:"high", fmt:num},
+  {key:"leg_kicks",                label:"Leg-kick ",        better:"high", fmt:v=>v.toFixed(2)},
+  {key:"sub_threat",               label:"Submission threat",    better:"high", fmt:num},
+  {key:"reach_inches",             label:"Reach",                better:"high", fmt:v=>v+'"'},
+];
+function pct(v){ return Math.round(v*100)+"%"; }
+function num(v){ return v.toFixed(2); }
+
+/* ---------- scoring ---------- */
+const CURVE = [420,510,590,665,725,770,780,793];
+const FLAVOR = ["Swept out of the title picture.","One defence, then dethroned.","A brief reign.",
+  "A respectable title run.","A solid champion.","A dominant title run.",
+  "An elite, era-spanning reign.","A legendary, near-flawless reign.","Immortal. The perfect roster."];
+let NORM = {};   // for each stat key: a sorted array of all values in the league
+function computeNorms(){
+  for(const s of SLOTS){
+    NORM[s.key] = CARDS.map(c => c.stats[s.key]).filter(v => v != null).sort((a,b)=>a-b);
+  }
+}
+function normVal(slot, v){
+  // percentile rank: what % of the league has a value <= v
+  const a = NORM[slot.key];
+  if(!a || !a.length) return 50;
+  // binary search for the first index with value >= v
+  let lo = 0, hi = a.length;
+  while(lo < hi){ const m = (lo+hi) >> 1; if(a[m] < v) lo = m+1; else hi = m; }
+  const rank = lo / a.length * 100;          // 0..100, higher rank = higher value
+  return slot.better === "low" ? 100 - rank : rank;
+}
+function recWeight(c){ const r=(c.record.wins+c.record.losses)?c.record.wins/(c.record.wins+c.record.losses):0.5; return 0.9+0.2*r; }
+function defencesFor(r){ let d=0; for(let i=0;i<CURVE.length;i++) if(r>=CURVE[i]) d=i+1; return d; }
+
+/* ---------- state ---------- */
+let CARDS = [];
+let MODE = "classic";
+let state = null;
+function freshState(){ return { slot:0, roster:Array(8).fill(null), usedCombos:new Set(), usedFighters:new Set(),
+  champs:0, tools:{both:1,keepEra:1,keepDiv:1}, spin:null, spinning:false }; }
+
+fetch("fighters.json").then(r=>{ if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); })
+  .then(d=>{ CARDS=d; start(); }).catch(showError);
+
+function start(){
+  document.getElementById("boot")?.remove();
+  document.getElementById("game").hidden = false;
+  document.getElementById("modes").hidden = false;
+  computeNorms();
+  state = freshState();
+
+  document.querySelectorAll(".mode-btn").forEach(b=>{
+    b.classList.toggle("active", b.dataset.mode===MODE);
+    b.onclick = ()=>{ if(state.spinning) return; MODE=b.dataset.mode; start(); };
+  });
+  document.getElementById("modeNote").textContent =
+    MODE==="classic" ? "All stats shown as you draft." : "Stats hidden until the final bell — draft on knowledge alone.";
+
+  document.getElementById("spin").onclick = ()=>{ if(!state.spin && !state.spinning && state.slot<8) performSpin(null); };
+  document.getElementById("tBoth").onclick = ()=>{ if(canTool("both")){ state.tools.both--; performSpin(null); } };
+  document.getElementById("tDiv").onclick  = ()=>{ if(canTool("keepEra")){ state.tools.keepEra--; performSpin("era"); } };
+  document.getElementById("tEra").onclick  = ()=>{ if(canTool("keepDiv")){ state.tools.keepDiv--; performSpin("division"); } };
+
+  document.getElementById("rEra").textContent="—"; document.getElementById("rDiv").textContent="—";
+  render();
+}
+
+/* ---------- eligibility ---------- */
+function eligibleIn(era,division){
+  const key=SLOTS[state.slot].key;
+  return CARDS.filter(c=>c.era===era&&c.division===division&&c.stats[key]!=null&&!state.usedFighters.has(c.fighter_id));
+}
+function validCombos(){
+  const key=SLOTS[state.slot].key, seen=new Set();
+  for(const c of CARDS){
+    if(c.stats[key]==null) continue;
+    if(state.usedFighters.has(c.fighter_id)) continue;
+    const combo=c.era+"|"+c.division;
+    if(state.usedCombos.has(combo)) continue;
+    seen.add(combo);
+  }
+  return [...seen].map(s=>{ const [era,division]=s.split("|"); return {era,division}; });
+}
+function altCombos(keep){
+  const cur=state.spin, combos=validCombos();
+  if(keep==="era")      return combos.filter(c=>c.era===cur.era && c.division!==cur.division);
+  if(keep==="division") return combos.filter(c=>c.division===cur.division && c.era!==cur.era);
+  if(cur)               return combos.filter(c=>!(c.era===cur.era && c.division===cur.division));
+  return combos;
+}
+function hasAlt(keep){ return state.spin ? altCombos(keep).length>0 : false; }
+function canTool(t){
+  if(state.spinning || !state.spin) return false;
+  if(t==="both")    return state.tools.both>0    && hasAlt(null);
+  if(t==="keepEra") return state.tools.keepEra>0 && hasAlt("era");
+  if(t==="keepDiv") return state.tools.keepDiv>0 && hasAlt("division");
+  return false;
+}
+
+/* ---------- spin ---------- */
+async function performSpin(keep){
+  if(state.spinning || state.slot>=8) return;
+  const combos = state.spin ? altCombos(keep) : validCombos();
+  if(!combos.length) return;
+  state.spinning=true; setControls();
+  document.getElementById("pool-wrap").innerHTML="";
+  const cur=state.spin; state.spin=null;
+  const pick=combos[Math.floor(Math.random()*combos.length)];
+  const eras=[...new Set(CARDS.map(c=>c.era))].sort();
+  const divs=[...new Set(CARDS.map(c=>c.division))].sort();
+  const rEra=document.getElementById("rEra"), rDiv=document.getElementById("rDiv");
+  if(keep==="era"){ rEra.textContent=pick.era; await reel(rDiv,divs,pick.division,1300); }
+  else if(keep==="division"){ rDiv.textContent=pick.division; await reel(rEra,eras,pick.era,1300); }
+  else { await reel(rEra,eras,pick.era,1100); await reel(rDiv,divs,pick.division,1300); }
+  state.spin=pick; state.spinning=false; setControls(); renderPool();
+}
+function reel(el,values,finalValue,totalMs){
+  return new Promise(resolve=>{
+    const box=el.closest(".reel");
+    if(matchMedia("(prefers-reduced-motion:reduce)").matches){ el.textContent=finalValue; resolve(); return; }
+    box.classList.add("spinning"); box.classList.remove("landed");
+    const t0=performance.now(); let last=0, delay=45;
+    function frame(now){
+      const t=now-t0;
+      if(t>=totalMs){ el.textContent=finalValue; box.classList.remove("spinning"); box.classList.add("landed"); resolve(); return; }
+      if(now-last>=delay){ el.textContent=values[Math.floor(Math.random()*values.length)]; last=now; delay=45+(t/totalMs)*160; }
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  });
+}
+
+/* ---------- pick ---------- */
+function canPick(c){ return (c.champion && state.champs>=2) ? "2 champ limit" : null; }
+function draft(c){
+  const slot=SLOTS[state.slot];
+  state.roster[state.slot]={ card:c, value:c.stats[slot.key] };
+  state.usedCombos.add(c.era+"|"+c.division);
+  state.usedFighters.add(c.fighter_id);
+  if(c.champion) state.champs++;
+  state.slot++; state.spin=null;
+  document.getElementById("rEra").textContent="—"; document.getElementById("rDiv").textContent="—";
+  render();
+}
+
+/* ---------- render ---------- */
+function render(){
+  document.getElementById("slots").innerHTML = SLOTS.map((s,i)=>{
+    const r=state.roster[i];
+    const cls = i===state.slot ? "active" : (r ? "filled" : "");
+    const body = r
+      ? `<div class="sname">${s.label}</div><div class="pick">${esc(r.card.name)} <span class="small">${r.card.era} · ${r.card.division}</span></div>`
+      : `<div class="sname">${s.label}</div>`;
+    const val = r ? (MODE==="classic" ? `<div class="val">${s.fmt(r.value)}</div>` : `<div class="val hid">•••</div>`) : "";
+    return `<div class="slot ${cls}"><div class="idx">${i+1}</div><div class="body">${body}</div>${val}</div>`;
+  }).join("");
+
+  document.getElementById("progress").textContent = `${state.slot} / 8`;
+  document.getElementById("champN").textContent = `${state.champs}/2`;
+  document.getElementById("rerollN").textContent = state.tools.both+state.tools.keepEra+state.tools.keepDiv;
+
+  if(state.slot>=8){ renderDone(); return; }
+  const s=SLOTS[state.slot];
+  const blind = MODE==="ballknowledge" ? " · blind" : "";
+  document.getElementById("now").innerHTML = `Slot ${state.slot+1} — drafting your <b>${s.label}</b> specialist${blind}`;
+  setControls();
+  if(!state.spin) document.getElementById("pool-wrap").innerHTML = `<div class="state">Spin to find ${s.label} specialists.</div>`;
+  else renderPool();
+}
+function setControls(){
+  const spin=document.getElementById("spin");
+  spin.disabled = state.spinning || state.slot>=8 || !!state.spin;
+  spin.textContent = state.spin ? "Locked in" : "Spin";
+  setTool("tBoth","both"); setTool("tDiv","keepEra"); setTool("tEra","keepDiv");
+}
+function setTool(id,t){
+  const btn=document.getElementById(id);
+  const left = t==="both"?state.tools.both : t==="keepEra"?state.tools.keepEra : state.tools.keepDiv;
+  btn.disabled = !canTool(t);
+  btn.classList.toggle("used", left<=0);
+}
+function renderPool(){
+  const s=SLOTS[state.slot];
+  let list=eligibleIn(state.spin.era,state.spin.division);
+  if(MODE==="classic") list.sort((a,b)=> s.better==="high" ? b.stats[s.key]-a.stats[s.key] : a.stats[s.key]-b.stats[s.key]);
+  else list.sort((a,b)=> a.name.localeCompare(b.name));
+
+  document.getElementById("pool-wrap").innerHTML =
+    `<div class="pool-head"><span>${state.spin.era} · ${state.spin.division}</span><span>${list.length} eligible</span></div><div id="pool"></div>`;
+  document.getElementById("pool").innerHTML = list.map((c,i)=>{
+    const lock=canPick(c);
+    const stat = MODE==="classic"
+      ? `<div class="fbig"><span class="v">${s.fmt(c.stats[s.key])}</span><span class="k">${s.label}</span></div>`
+      : `<div class="fbig"><span class="k">${c.era} · ${c.division} · stat hidden</span></div>`;
+    return `<button class="fighter ${c.champion?'champ':''} ${lock?'locked':''}" data-i="${i}" ${lock?'disabled':''}>
+      <div class="ftop"><span class="fname">${esc(c.name)}</span>
+        ${c.champion?'<span class="belt">Champ</span>':''}${lock?`<span class="lockmsg">${lock}</span>`:''}
+        <span class="frec">${c.record.wins}<span class="l">–${c.record.losses}</span></span></div>${stat}</button>`;
+  }).join("");
+  document.querySelectorAll("#pool .fighter").forEach(btn=>{
+    btn.onclick=()=>{ if(!btn.classList.contains("locked")) draft(list[+btn.dataset.i]); };
+  });
+}
+function renderDone(){
+  document.getElementById("now").innerHTML = "Roster complete";
+  document.getElementById("rEra").textContent="✓"; document.getElementById("rDiv").textContent="✓";
+  setControls();
+  let rating=0;
+  const rows=state.roster.map((r,i)=>{ const slot=SLOTS[i]; const contrib=Math.min(100,normVal(slot,r.value)*recWeight(r.card)); rating+=contrib; return {slot,r,contrib}; });
+  rating=Math.round(rating);
+  const def=defencesFor(rating);
+  const weakest=rows.reduce((m,row,i,a)=> row.contrib<a[m].contrib ? i : m, 0);
+  const bars=rows.map((row,i)=>`
+    <div class="brow ${i===weakest?'weak':''}">
+      <div class="blabel">${row.slot.label}</div>
+      <div class="bfighter">${esc(row.r.card.name)}<span>${row.slot.fmt(row.r.value)}</span></div>
+      <div class="bar"><div class="barfill" style="width:${Math.round(row.contrib)}%"></div></div>
+      <div class="bnum">${Math.round(row.contrib)}</div>
+    </div>`).join("");
+  document.getElementById("pool-wrap").innerHTML = `
+    <div class="score">
+      <div class="score-belt">Title Run${MODE==="ballknowledge"?" · Ball Knowledge":""}</div>
+      <div class="defnum">${def}<span>/ 8</span></div>
+      <div class="deflabel">title defence${def===1?'':'s'}</div>
+      <div class="flavor">${FLAVOR[def]}</div>
+      <div class="rating">Roster rating <b>${rating}</b> / 800</div>
+      <div class="breakdown">${bars}</div>
+      <button class="reset" id="reset">Draft again</button>
+    </div>`;
+  document.getElementById("reset").onclick = start;
+}
+function esc(s){ return s.replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function showError(err){
+  document.getElementById("boot").outerHTML = `
+    <div class="state error"><h3>Couldn't load fighters.json</h3>
+      <p>Run <code>python -m http.server 8001</code> in this folder, then open <code>http://localhost:8001/game.html</code>.</p>
+      <p style="color:var(--muted);font-size:12px">(${esc(String(err))})</p></div>`;
+}
+</script>
+</body>
+</html>

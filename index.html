@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Title Run — Roster Database</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0F1012; --panel:#16181C; --panel-2:#1C1F25; --line:#2A2E35;
+    --bone:#ECE6D8; --muted:#878C95;
+    --red:#E23B3B; --blue:#3E7CB1; --gold:#E8B53A;
+    --maxw:920px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:var(--ink); color:var(--bone);
+    font-family:'Inter',sans-serif; line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+    padding:32px 20px 80px;
+  }
+  .wrap{max-width:var(--maxw); margin:0 auto}
+
+  /* ---------- header ---------- */
+  .eyebrow{
+    font-family:'Space Mono',monospace; font-size:12px; letter-spacing:.22em;
+    text-transform:uppercase; color:var(--muted); display:flex; gap:10px; align-items:center;
+  }
+  .eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--red);
+    box-shadow:0 0 0 0 rgba(226,59,59,.6); animation:pulse 2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(226,59,59,.5)}70%{box-shadow:0 0 0 9px rgba(226,59,59,0)}100%{box-shadow:0 0 0 0 rgba(226,59,59,0)}}
+
+  h1{
+    font-family:'Oswald',sans-serif; font-weight:700; text-transform:uppercase;
+    font-size:clamp(40px,9vw,86px); line-height:.92; letter-spacing:-.01em;
+    margin:14px 0 6px;
+  }
+  h1 .vs{color:var(--red)}
+  .tagline{color:var(--muted); font-size:15px; max-width:46ch}
+
+  /* ---------- live counts ---------- */
+  .counts{
+    display:flex; flex-wrap:wrap; gap:28px; margin:30px 0 8px;
+    padding:22px 24px; background:var(--panel); border:1px solid var(--line);
+    border-radius:14px;
+  }
+  .count .num{
+    font-family:'Oswald',sans-serif; font-weight:600; font-size:42px; line-height:1;
+    font-variant-numeric:tabular-nums;
+  }
+  .count .lbl{font-family:'Space Mono',monospace; font-size:11px; letter-spacing:.16em;
+    text-transform:uppercase; color:var(--muted); margin-top:8px}
+  .count.gold .num{color:var(--gold)}
+
+  /* ---------- breakdown chips ---------- */
+  .section-label{
+    font-family:'Space Mono',monospace; font-size:11px; letter-spacing:.18em;
+    text-transform:uppercase; color:var(--muted); margin:34px 0 12px;
+    border-bottom:1px solid var(--line); padding-bottom:8px;
+  }
+  .chips{display:flex; flex-wrap:wrap; gap:8px}
+  .chip{
+    background:var(--panel); border:1px solid var(--line); border-radius:999px;
+    padding:7px 14px; font-size:13px; display:flex; gap:8px; align-items:center;
+  }
+  .chip b{font-family:'Space Mono',monospace; color:var(--bone)}
+  .chip span{color:var(--muted); text-transform:capitalize}
+
+  /* ---------- search ---------- */
+  .search-row{margin-top:34px}
+  input[type=search]{
+    width:100%; background:var(--panel-2); border:1px solid var(--line);
+    color:var(--bone); font-family:'Oswald',sans-serif; font-weight:500;
+    font-size:20px; text-transform:uppercase; letter-spacing:.02em;
+    padding:16px 18px; border-radius:12px; outline:none;
+  }
+  input[type=search]::placeholder{color:#565b63; text-transform:none; font-weight:400; letter-spacing:0}
+  input[type=search]:focus{border-color:var(--red); box-shadow:0 0 0 3px rgba(226,59,59,.18)}
+  .hint{margin-top:10px; color:var(--muted); font-size:13px; display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+  .try{background:none; border:1px solid var(--line); color:var(--bone);
+    border-radius:999px; padding:4px 11px; font-size:12px; cursor:pointer; font-family:inherit}
+  .try:hover{border-color:var(--blue); color:var(--blue)}
+
+  /* ---------- fighter cards (tale of the tape) ---------- */
+  #results{margin-top:24px; display:flex; flex-direction:column; gap:14px}
+  .tott{
+    background:var(--panel); border:1px solid var(--line); border-left:4px solid var(--blue);
+    border-radius:12px; padding:18px 20px; opacity:0; transform:translateY(8px);
+    animation:rise .35s ease forwards;
+  }
+  .tott.champ{border-left-color:var(--gold)}
+  @keyframes rise{to{opacity:1; transform:none}}
+  @media (prefers-reduced-motion:reduce){.tott{animation:none;opacity:1;transform:none}}
+
+  .tott-top{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:16px}
+  .tott-name{font-family:'Oswald',sans-serif; font-weight:700; text-transform:uppercase;
+    font-size:24px; letter-spacing:.01em}
+  .meta{font-family:'Space Mono',monospace; font-size:12px; color:var(--muted);
+    text-transform:uppercase; letter-spacing:.08em}
+  .belt{color:var(--ink); background:var(--gold); font-weight:700; font-family:'Space Mono',monospace;
+    font-size:11px; letter-spacing:.1em; padding:3px 9px; border-radius:5px; text-transform:uppercase}
+  .rec{margin-left:auto; font-family:'Oswald',sans-serif; font-weight:600; font-size:20px}
+  .rec .w{color:var(--bone)} .rec .l{color:var(--muted)}
+
+  .grid{display:grid; grid-template-columns:repeat(4,1fr); gap:1px;
+    background:var(--line); border:1px solid var(--line); border-radius:8px; overflow:hidden}
+  .stat{background:var(--panel-2); padding:11px 12px}
+  .stat .v{font-family:'Space Mono',monospace; font-weight:700; font-size:17px; font-variant-numeric:tabular-nums}
+  .stat .v.null{color:#4d525a}
+  .stat .k{font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-top:4px}
+  @media (max-width:560px){.grid{grid-template-columns:repeat(2,1fr)} .rec{margin-left:0; width:100%}}
+
+  /* ---------- states ---------- */
+  .state{padding:40px 24px; text-align:center; border:1px dashed var(--line); border-radius:12px; color:var(--muted)}
+  .state.error{border-color:var(--red); border-style:solid; text-align:left}
+  .state.error h3{font-family:'Oswald',sans-serif; text-transform:uppercase; color:var(--red); font-size:18px; margin-bottom:10px}
+  .state.error code{background:var(--ink); border:1px solid var(--line); border-radius:5px;
+    padding:2px 7px; font-family:'Space Mono',monospace; color:var(--gold); font-size:13px}
+  .state.error p{color:var(--bone); margin:8px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow"><span class="dot"></span> Roster Database · Live</div>
+  <h1>Title <span class="vs">Run</span></h1>
+  <p class="tagline">Every UFC fighter, split by era and division, with eight tracked attributes. The raw material your roster gets drafted from.</p>
+
+  <div class="counts" id="counts" hidden>
+    <div class="count"><div class="num" data-count="cards">0</div><div class="lbl">Fighter-era cards</div></div>
+    <div class="count"><div class="num" data-count="fighters">0</div><div class="lbl">Fighters</div></div>
+    <div class="count gold"><div class="num" data-count="champs">0</div><div class="lbl">Championship cards</div></div>
+  </div>
+
+  <div id="breakdowns" hidden>
+    <div class="section-label">Cards by era</div>
+    <div class="chips" id="eras"></div>
+    <div class="section-label">Cards by division</div>
+    <div class="chips" id="divisions"></div>
+  </div>
+
+  <div class="search-row" id="searchRow" hidden>
+    <div class="section-label">Find a fighter</div>
+    <input type="search" id="search" placeholder="Type a name… e.g. Jon Jones" autocomplete="off">
+    <div class="hint">Try:
+      <button class="try">Jon Jones</button>
+      <button class="try">Khabib Nurmagomedov</button>
+      <button class="try">Israel Adesanya</button>
+      <button class="try">Carlos Prates</button>
+    </div>
+  </div>
+
+  <div id="results"></div>
+  <div id="boot" class="state">Loading roster database…</div>
+
+</div>
+
+<script>
+const STAT_ORDER = [
+  ["strike_accuracy","Sig. acc",      v=>pct(v)],
+  ["strikes_absorbed_per_min","Absorbed/min", v=>num(v)],
+  ["td_defence","TD def",             v=>pct(v)],
+  ["td_accuracy","TD acc",            v=>pct(v)],
+  ["knockdown_ratio","KD / round",    v=>num(v)],
+  ["finish_ratio","Finish %",         v=>pct(v)],
+  ["sub_threat","Sub / round",        v=>num(v)],
+  ["reach_inches","Reach",            v=>v==null?null:v+'"'],
+];
+const pct = v => v==null ? null : Math.round(v*100)+"%";
+const num = v => v==null ? null : v.toFixed(2);
+
+let CARDS = [];
+
+fetch("fighters.json")
+  .then(r => { if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); })
+  .then(data => { CARDS = data; boot(); })
+  .catch(err => showError(err));
+
+function boot(){
+  document.getElementById("boot").remove();
+
+  const fighters = new Set(CARDS.map(c => c.fighter_id));
+  const champs = CARDS.filter(c => c.champion).length;
+  setCount("cards", CARDS.length);
+  setCount("fighters", fighters.size);
+  setCount("champs", champs);
+  reveal("counts"); reveal("breakdowns"); reveal("searchRow");
+
+  renderChips("eras", tally(CARDS.map(c => c.era)), true);
+  renderChips("divisions", tally(CARDS.map(c => c.division)));
+
+  const box = document.getElementById("search");
+  box.addEventListener("input", () => runSearch(box.value));
+  document.querySelectorAll(".try").forEach(b =>
+    b.addEventListener("click", () => { box.value = b.textContent; runSearch(box.value); box.focus(); }));
+}
+
+function runSearch(q){
+  const res = document.getElementById("results");
+  q = q.trim().toLowerCase();
+  if(q.length < 2){ res.innerHTML = ""; return; }
+  const hits = CARDS
+    .filter(c => c.name.toLowerCase().includes(q))
+    .sort((a,b) => a.name.localeCompare(b.name) || a.era.localeCompare(b.era));
+  if(!hits.length){
+    res.innerHTML = `<div class="state">No fighter matches “${escapeHtml(q)}”. Check the spelling, or try a last name.</div>`;
+    return;
+  }
+  res.innerHTML = hits.slice(0,12).map(cardHTML).join("");
+}
+
+function cardHTML(c){
+  const cells = STAT_ORDER.map(([key,label,fmt])=>{
+    const out = fmt(c.stats[key]);
+    const isNull = out==null;
+    return `<div class="stat"><div class="v ${isNull?'null':''}">${isNull?'—':out}</div><div class="k">${label}</div></div>`;
+  }).join("");
+  return `
+    <div class="tott ${c.champion?'champ':''}">
+      <div class="tott-top">
+        <span class="tott-name">${escapeHtml(c.name)}</span>
+        <span class="meta">${c.era} · ${c.division}</span>
+        ${c.champion?'<span class="belt">Champ</span>':''}
+        <span class="rec"><span class="w">${c.record.wins}</span><span class="l">–${c.record.losses}</span></span>
+      </div>
+      <div class="grid">${cells}</div>
+    </div>`;
+}
+
+/* helpers */
+function tally(arr){
+  const m = {};
+  arr.forEach(x => m[x] = (m[x]||0)+1);
+  return Object.entries(m).sort((a,b)=>b[1]-a[1]);
+}
+function renderChips(id, entries, keepOrder){
+  if(keepOrder) entries.sort((a,b)=>a[0].localeCompare(b[0]));
+  document.getElementById(id).innerHTML = entries
+    .map(([k,v]) => `<div class="chip"><b>${v}</b><span>${k}</span></div>`).join("");
+}
+function setCount(name, target){
+  const el = document.querySelector(`[data-count="${name}"]`);
+  if(window.matchMedia("(prefers-reduced-motion:reduce)").matches){ el.textContent = target.toLocaleString(); return; }
+  const dur = 700, t0 = performance.now();
+  (function tick(t){
+    const p = Math.min(1,(t-t0)/dur);
+    el.textContent = Math.round(target*(1-Math.pow(1-p,3))).toLocaleString();
+    if(p<1) requestAnimationFrame(tick);
+  })(t0);
+}
+function reveal(id){ const el=document.getElementById(id); el.hidden=false; }
+function escapeHtml(s){ return s.replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+function showError(err){
+  document.getElementById("boot").outerHTML = `
+    <div class="state error">
+      <h3>Couldn't load fighters.json</h3>
+      <p>Most likely you opened this file directly (the address bar starts with <code>file://</code>). Browsers block data loading that way.</p>
+      <p>Fix: in the folder that holds <code>index.html</code> and <code>fighters.json</code>, run</p>
+      <p><code>python -m http.server</code></p>
+      <p>then open <code>http://localhost:8000</code> in your browser.</p>
+      <p style="color:var(--muted);font-size:12px;margin-top:14px">(${escapeHtml(String(err))})</p>
+    </div>`;
+}
+</script>
+</body>
+</html>
