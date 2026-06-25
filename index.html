@@ -40,6 +40,44 @@
   h1 .vs{color:var(--red)}
   .tagline{color:var(--muted); font-size:15px; max-width:46ch}
 
+  /* ---------- play button (focal CTA) ---------- */
+  .play-cta{
+    display:flex; align-items:center; justify-content:flex-start; gap:18px;
+    margin:28px 0 8px; padding:22px 26px;
+    background:linear-gradient(135deg, var(--gold) 0%, #c9982a 100%);
+    border:none; border-radius:14px; color:var(--ink); text-decoration:none;
+    box-shadow:0 0 0 0 rgba(232,181,58,.5);
+    animation:beltGlow 2.6s ease-in-out infinite;
+    transition:transform .12s ease, box-shadow .2s ease;
+    position:relative; overflow:hidden;
+  }
+  .play-cta:hover{transform:translateY(-2px); box-shadow:0 12px 30px -8px rgba(232,181,58,.45)}
+  .play-cta:active{transform:translateY(0)}
+  .play-cta:focus-visible{outline:3px solid var(--bone); outline-offset:3px}
+  @keyframes beltGlow{
+    0%,100%{box-shadow:0 0 0 0 rgba(232,181,58,.4)}
+    50%    {box-shadow:0 0 36px -6px rgba(232,181,58,.65)}
+  }
+  @media (prefers-reduced-motion:reduce){.play-cta{animation:none}}
+  .play-eyebrow{
+    font-family:'Space Mono',monospace; font-size:11px; letter-spacing:.22em;
+    text-transform:uppercase; opacity:.7; align-self:center;
+  }
+  .play-label{
+    font-family:'Oswald',sans-serif; font-weight:700; text-transform:uppercase;
+    font-size:clamp(28px,5vw,42px); letter-spacing:-.005em; line-height:1;
+    margin-left:auto;
+  }
+  .play-arrow{
+    font-family:'Oswald',sans-serif; font-weight:700; font-size:34px; line-height:1;
+    transition:transform .15s ease;
+  }
+  .play-cta:hover .play-arrow{transform:translateX(6px)}
+
+  /* ---------- database section header ---------- */
+  .db-header{margin-top:42px}
+  .db-sub{color:var(--muted); font-size:13px; margin-top:4px}
+
   /* ---------- live counts ---------- */
   .counts{
     display:flex; flex-wrap:wrap; gap:28px; margin:30px 0 8px;
@@ -124,9 +162,20 @@
 <body>
 <div class="wrap">
 
-  <div class="eyebrow"><span class="dot"></span> Roster Database · Live</div>
-  <h1>Title <span class="vs">Run</span></h1>
-  <p class="tagline">Every UFC fighter, split by era and division, with eight tracked attributes. The raw material your roster gets drafted from.</p>
+  <div class="eyebrow"><span class="dot"></span> 8 specialists · 8 title defences</div>
+  <h1>8<span class="vs">-</span>0</h1>
+  <p class="tagline">Spin a roulette of UFC eras and divisions. Draft 8 specialists. Can your roster defend the belt eight straight times?</p>
+
+  <a href="game.html" class="play-cta">
+    <span class="play-eyebrow">Build your roster</span>
+    <span class="play-label">Play 8-0</span>
+    <span class="play-arrow" aria-hidden="true">→</span>
+  </a>
+
+  <div class="db-header">
+    <div class="section-label">The roster database</div>
+    <p class="db-sub">Every fighter you can draft from, split by era and division.</p>
+  </div>
 
   <div class="counts" id="counts" hidden>
     <div class="count"><div class="num" data-count="cards">0</div><div class="lbl">Fighter-era cards</div></div>
