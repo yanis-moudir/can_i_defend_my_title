@@ -114,6 +114,30 @@
   .brow.weak .barfill{background:var(--red)}
   .bnum{font-family:'Space Mono',monospace;font-weight:700;font-size:12px;text-align:right}
   @media (max-width:560px){.brow{grid-template-columns:96px minmax(0,1fr) 40px 24px;gap:7px}.blabel{font-size:9.5px}}
+
+  /* ---------- free-choice fighter row ---------- */
+  .fighter-row{
+    background:var(--panel); border:1px solid var(--line); border-left:4px solid var(--blue);
+    border-radius:11px; padding:14px 16px; transition:border-color .12s, background .12s;
+  }
+  .fighter-row.champ{border-left-color:var(--gold)}
+  .fighter-row.cl{opacity:.55}
+  .scgrid{display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-top:4px}
+  @media (max-width:640px){.scgrid{grid-template-columns:repeat(2,1fr)}}
+  .scbtn{
+    display:flex; flex-direction:column; align-items:flex-start; gap:2px;
+    background:var(--panel-2); border:1px solid var(--line); border-radius:8px;
+    padding:8px 10px; cursor:pointer; font-family:inherit; color:inherit;
+    text-align:left; min-height:46px; transition:border-color .12s, background .12s;
+  }
+  .scbtn:hover:not(.locked){border-color:var(--gold); background:rgba(232,181,58,.06)}
+  .scbtn.locked{opacity:.32; cursor:not-allowed; background:transparent}
+  .scbtn:focus-visible{outline:2px solid var(--blue); outline-offset:1px}
+  .sck{font-family:'Space Mono',monospace; font-size:9.5px; letter-spacing:.06em;
+       text-transform:uppercase; color:var(--muted); line-height:1.2}
+  .scv{font-family:'Space Mono',monospace; font-weight:700; font-size:14px;
+       color:var(--bone); font-variant-numeric:tabular-nums}
+  .scbtn:hover:not(.locked) .scv{color:var(--gold)}
 </style>
 </head>
 <body>
@@ -157,12 +181,12 @@
 
 <script>
 const SLOTS = [
-  {key:"strike_accuracy",          label:"Strikes_accuracy", better:"high", fmt:pct},
-  {key:"strikes_absorbed_per_min", label:"Strikes_defence", better:"low",  fmt:num},
+  {key:"strike_accuracy",          label:"Strike accuracy", better:"high", fmt:pct},
+  {key:"strikes_absorbed_per_min", label:"Strike defence", better:"low",  fmt:num},
   {key:"td_defence",               label:"Takedown defence",     better:"high", fmt:pct},
   {key:"td_accuracy",              label:"Takedown offence",    better:"high", fmt:pct},
   {key:"knockdown_ratio",          label:"Power",      better:"high", fmt:num},
-  {key:"leg_kicks",                label:"Leg-kick ",        better:"high", fmt:v=>v.toFixed(2)},
+  {key:"leg_kicks",                label:"Leg-kick",        better:"high", fmt:v=>v.toFixed(2)},
   {key:"sub_threat",               label:"Submission threat",    better:"high", fmt:num},
   {key:"reach_inches",             label:"Reach",                better:"high", fmt:v=>v+'"'},
 ];
@@ -170,7 +194,7 @@ function pct(v){ return Math.round(v*100)+"%"; }
 function num(v){ return v.toFixed(2); }
 
 /* ---------- scoring ---------- */
-const CURVE = [420,510,590,665,725,770,780,793];
+const CURVE = [420,510,590,665,725,770,790,795];
 const FLAVOR = ["Swept out of the title picture.","One defence, then dethroned.","A brief reign.",
   "A respectable title run.","A solid champion.","A dominant title run.",
   "An elite, era-spanning reign.","A legendary, near-flawless reign.","Immortal. The perfect roster."];
@@ -197,7 +221,7 @@ function defencesFor(r){ let d=0; for(let i=0;i<CURVE.length;i++) if(r>=CURVE[i]
 let CARDS = [];
 let MODE = "classic";
 let state = null;
-function freshState(){ return { slot:0, roster:Array(8).fill(null), usedCombos:new Set(), usedFighters:new Set(),
+function freshState(){ return { filled:0, roster:Array(8).fill(null), usedCombos:new Set(), usedFighters:new Set(),
   champs:0, tools:{both:1,keepEra:1,keepDiv:1}, spin:null, spinning:false }; }
 
 fetch("fighters.json").then(r=>{ if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); })
@@ -217,7 +241,7 @@ function start(){
   document.getElementById("modeNote").textContent =
     MODE==="classic" ? "All stats shown as you draft." : "Stats hidden until the final bell — draft on knowledge alone.";
 
-  document.getElementById("spin").onclick = ()=>{ if(!state.spin && !state.spinning && state.slot<8) performSpin(null); };
+  document.getElementById("spin").onclick = ()=>{ if(!state.spin && !state.spinning && state.filled<8) performSpin(null); };
   document.getElementById("tBoth").onclick = ()=>{ if(canTool("both")){ state.tools.both--; performSpin(null); } };
   document.getElementById("tDiv").onclick  = ()=>{ if(canTool("keepEra")){ state.tools.keepEra--; performSpin("era"); } };
   document.getElementById("tEra").onclick  = ()=>{ if(canTool("keepDiv")){ state.tools.keepDiv--; performSpin("division"); } };
@@ -227,20 +251,28 @@ function start(){
 }
 
 /* ---------- eligibility ---------- */
-function eligibleIn(era,division){
-  const key=SLOTS[state.slot].key;
-  return CARDS.filter(c=>c.era===era&&c.division===division&&c.stats[key]!=null&&!state.usedFighters.has(c.fighter_id));
+// any fighter in this era+div not yet drafted
+function eligibleIn(era, division){
+  return CARDS.filter(c =>
+    c.era === era && c.division === division &&
+    !state.usedFighters.has(c.fighter_id));
 }
+// any combo that still has at least one un-drafted fighter and isn't already used
 function validCombos(){
-  const key=SLOTS[state.slot].key, seen=new Set();
+  const seen = new Set();
   for(const c of CARDS){
-    if(c.stats[key]==null) continue;
     if(state.usedFighters.has(c.fighter_id)) continue;
-    const combo=c.era+"|"+c.division;
+    const combo = c.era + "|" + c.division;
     if(state.usedCombos.has(combo)) continue;
     seen.add(combo);
   }
-  return [...seen].map(s=>{ const [era,division]=s.split("|"); return {era,division}; });
+  return [...seen].map(s => { const [era,division]=s.split("|"); return {era,division}; });
+}
+// which slots is this fighter eligible for? (has the stat at all, with the champion gate)
+function eligibleSlotsFor(c){
+  if(c.champion && state.champs >= 2) return [];
+  return SLOTS.map((s,i)=>({s,i}))
+    .filter(({s,i}) => state.roster[i]===null && c.stats[s.key] != null);
 }
 function altCombos(keep){
   const cur=state.spin, combos=validCombos();
@@ -260,7 +292,7 @@ function canTool(t){
 
 /* ---------- spin ---------- */
 async function performSpin(keep){
-  if(state.spinning || state.slot>=8) return;
+  if(state.spinning || state.filled>=8) return;
   const combos = state.spin ? altCombos(keep) : validCombos();
   if(!combos.length) return;
   state.spinning=true; setControls();
@@ -292,14 +324,13 @@ function reel(el,values,finalValue,totalMs){
 }
 
 /* ---------- pick ---------- */
-function canPick(c){ return (c.champion && state.champs>=2) ? "2 champ limit" : null; }
-function draft(c){
-  const slot=SLOTS[state.slot];
-  state.roster[state.slot]={ card:c, value:c.stats[slot.key] };
+function draft(c, slotIdx){
+  const slot=SLOTS[slotIdx];
+  state.roster[slotIdx]={ card:c, value:c.stats[slot.key] };
   state.usedCombos.add(c.era+"|"+c.division);
   state.usedFighters.add(c.fighter_id);
   if(c.champion) state.champs++;
-  state.slot++; state.spin=null;
+  state.filled++; state.spin=null;
   document.getElementById("rEra").textContent="—"; document.getElementById("rDiv").textContent="—";
   render();
 }
@@ -308,7 +339,7 @@ function draft(c){
 function render(){
   document.getElementById("slots").innerHTML = SLOTS.map((s,i)=>{
     const r=state.roster[i];
-    const cls = i===state.slot ? "active" : (r ? "filled" : "");
+    const cls = r ? "filled" : "";
     const body = r
       ? `<div class="sname">${s.label}</div><div class="pick">${esc(r.card.name)} <span class="small">${r.card.era} · ${r.card.division}</span></div>`
       : `<div class="sname">${s.label}</div>`;
@@ -316,21 +347,20 @@ function render(){
     return `<div class="slot ${cls}"><div class="idx">${i+1}</div><div class="body">${body}</div>${val}</div>`;
   }).join("");
 
-  document.getElementById("progress").textContent = `${state.slot} / 8`;
+  document.getElementById("progress").textContent = `${state.filled} / 8`;
   document.getElementById("champN").textContent = `${state.champs}/2`;
   document.getElementById("rerollN").textContent = state.tools.both+state.tools.keepEra+state.tools.keepDiv;
 
-  if(state.slot>=8){ renderDone(); return; }
-  const s=SLOTS[state.slot];
-  const blind = MODE==="ballknowledge" ? " · blind" : "";
-  document.getElementById("now").innerHTML = `Slot ${state.slot+1} — drafting your <b>${s.label}</b> specialist${blind}`;
+  if(state.filled>=8){ renderDone(); return; }
+  const blind = MODE==="ballknowledge" ? " · stats hidden" : "";
+  document.getElementById("now").innerHTML = `Spin a pool, then pick any fighter for any open slot${blind}`;
   setControls();
-  if(!state.spin) document.getElementById("pool-wrap").innerHTML = `<div class="state">Spin to find ${s.label} specialists.</div>`;
+  if(!state.spin) document.getElementById("pool-wrap").innerHTML = `<div class="state">Spin to see who's available.</div>`;
   else renderPool();
 }
 function setControls(){
   const spin=document.getElementById("spin");
-  spin.disabled = state.spinning || state.slot>=8 || !!state.spin;
+  spin.disabled = state.spinning || state.filled>=8 || !!state.spin;
   spin.textContent = state.spin ? "Locked in" : "Spin";
   setTool("tBoth","both"); setTool("tDiv","keepEra"); setTool("tEra","keepDiv");
 }
@@ -341,25 +371,44 @@ function setTool(id,t){
   btn.classList.toggle("used", left<=0);
 }
 function renderPool(){
-  const s=SLOTS[state.slot];
   let list=eligibleIn(state.spin.era,state.spin.division);
-  if(MODE==="classic") list.sort((a,b)=> s.better==="high" ? b.stats[s.key]-a.stats[s.key] : a.stats[s.key]-b.stats[s.key]);
-  else list.sort((a,b)=> a.name.localeCompare(b.name));
+  list.sort((a,b)=> a.name.localeCompare(b.name));
 
   document.getElementById("pool-wrap").innerHTML =
-    `<div class="pool-head"><span>${state.spin.era} · ${state.spin.division}</span><span>${list.length} eligible</span></div><div id="pool"></div>`;
+    `<div class="pool-head"><span>${state.spin.era} · ${state.spin.division}</span><span>${list.length} available</span></div><div id="pool"></div>`;
+
   document.getElementById("pool").innerHTML = list.map((c,i)=>{
-    const lock=canPick(c);
-    const stat = MODE==="classic"
-      ? `<div class="fbig"><span class="v">${s.fmt(c.stats[s.key])}</span><span class="k">${s.label}</span></div>`
-      : `<div class="fbig"><span class="k">${c.era} · ${c.division} · stat hidden</span></div>`;
-    return `<button class="fighter ${c.champion?'champ':''} ${lock?'locked':''}" data-i="${i}" ${lock?'disabled':''}>
-      <div class="ftop"><span class="fname">${esc(c.name)}</span>
-        ${c.champion?'<span class="belt">Champ</span>':''}${lock?`<span class="lockmsg">${lock}</span>`:''}
-        <span class="frec">${c.record.wins}<span class="l">–${c.record.losses}</span></span></div>${stat}</button>`;
+    const eligSlots = eligibleSlotsFor(c);
+    const champLocked = c.champion && state.champs >= 2;
+    // build a chip per OPEN slot the fighter can fill
+    const slotChips = SLOTS.map((s,si)=>{
+      const filled = state.roster[si] !== null;
+      const hasStat = c.stats[s.key] != null;
+      const blocked = filled || !hasStat || champLocked;
+      const cls = blocked ? "scbtn locked" : "scbtn";
+      const val = (MODE==="classic" && hasStat) ? `<span class="scv">${s.fmt(c.stats[s.key])}</span>` : "";
+      const why = filled ? "slot filled" : (!hasStat ? "no data" : (champLocked ? "champ limit" : ""));
+      return `<button class="${cls}" data-fi="${i}" data-si="${si}" ${blocked?'disabled':''} title="${why}">
+        <span class="sck">${s.label}</span>${val}</button>`;
+    }).join("");
+
+    return `<div class="fighter-row ${c.champion?'champ':''} ${champLocked?'cl':''}">
+      <div class="ftop">
+        <span class="fname">${esc(c.name)}</span>
+        ${c.champion?'<span class="belt">Champ</span>':''}
+        ${champLocked?'<span class="lockmsg">2 champ limit</span>':''}
+        <span class="frec">${c.record.wins}<span class="l">–${c.record.losses}</span></span>
+      </div>
+      <div class="scgrid">${slotChips}</div>
+    </div>`;
   }).join("");
-  document.querySelectorAll("#pool .fighter").forEach(btn=>{
-    btn.onclick=()=>{ if(!btn.classList.contains("locked")) draft(list[+btn.dataset.i]); };
+
+  document.querySelectorAll("#pool .scbtn").forEach(btn=>{
+    btn.onclick = ()=>{
+      if(btn.classList.contains("locked")) return;
+      const fi = +btn.dataset.fi, si = +btn.dataset.si;
+      draft(list[fi], si);
+    };
   });
 }
 function renderDone(){
